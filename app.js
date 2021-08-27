@@ -1,7 +1,10 @@
 const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
-const static = require('node-static');
+const os = require('os');
+const FormData = require('form-data');
+const { FreeboxRegister, Freebox } = require("freebox");
+
 
 
 const directory = ('watched');
@@ -18,26 +21,74 @@ fs.readdir(directory, (err, files) => {
 });
 
 
-const files = new static.Server('./watched/');
+if(!fs.existsSync("./fbx.json")){
+    async function main() {
+        const freeboxRegister = new FreeboxRegister({
+            app_id: "fbx.dl-blackhole",
+            app_name: "Freebox Download Blackhole",
+            app_version: "1.0.0",
+            device_name: os.hostname(),
+        });
 
-require('http').createServer(function (request, response) {
-    request.addListener('end', function () {
-        files.serve(request, response);
-    }).resume();
-}).listen(16200);
-
-
-
-chokidar.watch('./watched').on('add', (event, dpath) => {
-    console.log(event);
-    var fileName = path.basename('/'+event);
-    if(path.extname(fileName) !== ".torrent"){
-        console.log(`Invalid file detected: "${fileName}". Deleting it from the watched folder!`);
-        fs.unlink(path.join(directory, fileName), err => {
-            if (err) throw err;
-        })
-    }else{
-
+        // Obtaining an app_token & everything you need
+        // following the guide at https://dev.freebox.fr/sdk/os/login/
+        const access = await freeboxRegister.register();
     }
-});
+    main().catch(err => console.error(err));
+}else {
+    const fbxInfo = require('./fbx.json');
+    async function main() {
+        const freebox = new Freebox({
+            app_token: fbxInfo.app_token,
+            app_id: fbxInfo.app_id,
+            api_domain: fbxInfo.api_domain,
+            https_port: fbxInfo.https_port,
+            api_base_url: fbxInfo.api_base_url,
+            api_version: fbxInfo.api_version,
+        });
+
+        // Open a session
+        // https://dev.freebox.fr/sdk/os/login/
+        await freebox.login();
+
+        chokidar.watch('./watched').on('add', (event, dpath) => {
+            console.log(event);
+            var fileName = path.basename('/' + event);
+            if (path.extname(fileName) !== ".torrent") {
+                console.log(`Invalid file detected: "${fileName}". Deleting it from the watched folder!`);
+                fs.unlink(path.join(directory, fileName), err => {
+                    if (err) throw err;
+                })
+            } else {
+                const formData = new FormData();
+                let downDir = '/Freebox/Films';
+                let buff = new Buffer(downDir);
+                let b64Dir = buff.toString('base64');
+                formData.append('download_dir', b64Dir);
+                formData.append('download_file', fs.createReadStream(path.join(directory, fileName)));
+                freebox.request({
+                    method: 'post',
+                    url: 'downloads/add',
+                    data: formData,
+                    headers: formData.getHeaders()
+                }).then(function(response) {
+                    console.log(response);
+                    fs.unlink(path.join(directory, fileName), err => {
+                        if (err) throw err;
+                    })
+                }).catch(err => console.error(err));
+
+            }
+        });
+
+        // Close the current session
+        // https://dev.freebox.fr/sdk/os/login/#closing-the-current-session
+    }
+
+    main().catch(err => console.error(err));
+}
+
+function utf8_to_b64( str ) {
+    return btoa(unescape(encodeURIComponent( str )));
+}
 
