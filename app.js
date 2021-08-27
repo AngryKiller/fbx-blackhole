@@ -5,10 +5,7 @@ const os = require('os');
 const FormData = require('form-data');
 const { FreeboxRegister, Freebox } = require("freebox");
 
-
-
 const directory = ('watched');
-
 
 /* empty folder before starting */
 fs.readdir(directory, (err, files) => {
@@ -19,7 +16,6 @@ fs.readdir(directory, (err, files) => {
         });
     }
 });
-
 
 if(!fs.existsSync("./fbx.json")){
     async function main() {
@@ -52,7 +48,7 @@ if(!fs.existsSync("./fbx.json")){
         await freebox.login();
 
         chokidar.watch('./watched').on('add', (event, dpath) => {
-            console.log(event);
+            console.log("New file detected: "+event);
             var fileName = path.basename('/' + event);
             if (path.extname(fileName) !== ".torrent") {
                 console.log(`Invalid file detected: "${fileName}". Deleting it from the watched folder!`);
@@ -72,10 +68,15 @@ if(!fs.existsSync("./fbx.json")){
                     data: formData,
                     headers: formData.getHeaders()
                 }).then(function(response) {
-                    console.log(response);
-                    fs.unlink(path.join(directory, fileName), err => {
-                        if (err) throw err;
-                    })
+                    console.log(response.data.success);
+                    if(response.data.success === true){
+                        console.log("Download added successfully to the Freebox at this path: "+downDir);
+                        fs.unlink(path.join(directory, fileName), err => {
+                            if (err) throw err;
+                        })
+                    }else{
+                        console.error("An error occured while adding the torrent to the Freebox: "+response.data.error_code+" ("+response.data.msg+")");
+                    }
                 }).catch(err => console.error(err));
 
             }
@@ -86,9 +87,5 @@ if(!fs.existsSync("./fbx.json")){
     }
 
     main().catch(err => console.error(err));
-}
-
-function utf8_to_b64( str ) {
-    return btoa(unescape(encodeURIComponent( str )));
 }
 
