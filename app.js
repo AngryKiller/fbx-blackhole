@@ -29,8 +29,17 @@ if(!fs.existsSync("./fbx.json")){
         // Obtaining an app_token & everything you need
         // following the guide at https://dev.freebox.fr/sdk/os/login/
         const access = await freeboxRegister.register();
+        const fbxJson = JSON.stringify(access);
+        fs.writeFile("fbx.json", fbxJson, 'utf8', function (err) {
+            if (err) {
+                console.log("An error occured while writing JSON Object to File.");
+                return console.log(err);
+            }
+            console.log("JSON file containing Freebox authentication informations has been saved.");
+        });
     }
     main().catch(err => console.error(err));
+
 }else {
     const fbxInfo = require('./fbx.json');
     async function main() {
