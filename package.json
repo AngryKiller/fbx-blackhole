@@ -4,10 +4,12 @@
   "description": "A blackhole for torrent files that adds the files to the Freebox seedbox",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
   },
   "author": "Steve Labus (AngryKiller)",
   "license": "GPL-2.0",
+  "repository": "https://github.com/AngryKiller/fbx-blackhole.git",
   "dependencies": {
     "chokidar": "^3.5.2",
     "form-data": "^4.0.0",
