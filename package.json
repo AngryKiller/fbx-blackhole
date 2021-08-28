@@ -13,6 +13,6 @@
   "dependencies": {
     "chokidar": "^3.5.2",
     "form-data": "^4.0.0",
-    "freebox": "^1.3.3"
+    "freebox": "git+https://github.com/AngryKiller/freebox.git"
   }
 }
