@@ -57,7 +57,6 @@ if(!fs.existsSync("./fbx.json")){
         // Open a session
         // https://dev.freebox.fr/sdk/os/login/
         await freebox.login();
-
         conf.forEach(function(folder){
             chokidar.watch(folder.watchedDir).on('add', (event, dpath) => {
                 console.log("New file detected: "+event);
@@ -84,9 +83,12 @@ if(!fs.existsSync("./fbx.json")){
                             console.log("Download added successfully to the Freebox at this path: "+downDir);
                             fs.unlink(path.join(folder.watchedDir, fileName), err => {
                                 if (err) throw err;
-                            })
+                            });
                         }else{
                             console.error(`An error occured while adding the torrent to the Freebox: ${response.data.error_code} (${response.data.msg})`);
+                            fs.unlink(path.join(folder.watchedDir, fileName), err => {
+                                if (err) throw err;
+                            });
                         }
                     }).catch(err => console.error(err));
 
