@@ -5,7 +5,6 @@ const os = require('os');
 const FormData = require('form-data');
 const { FreeboxRegister, Freebox } = require("freebox");
 let conf;
-const directory = ('watched');
 
 /* create a config file based on the example at first start */
 if(!fs.existsSync("./config.json")){
@@ -36,7 +35,7 @@ if(!fs.existsSync("./fbx.json")){
         fs.writeFile("fbx.json", fbxJson, 'utf8', function (err) {
             if (err) {
                 console.log("An error occured while writing JSON object to file.");
-                return console.log(err);
+                throw err;
             }
             console.log("JSON file containing Freebox authentication informations has been saved.");
         });
@@ -87,7 +86,7 @@ if(!fs.existsSync("./fbx.json")){
                                 if (err) throw err;
                             })
                         }else{
-                            console.error("An error occured while adding the torrent to the Freebox: "+response.data.error_code+" ("+response.data.msg+")");
+                            console.error(`An error occured while adding the torrent to the Freebox: ${response.data.error_code} (${response.data.msg})`);
                         }
                     }).catch(err => console.error(err));
 
@@ -97,6 +96,18 @@ if(!fs.existsSync("./fbx.json")){
 
         // Close the current session
         // https://dev.freebox.fr/sdk/os/login/#closing-the-current-session
+
+        process.on('SIGTERM', () => {
+            console.info('Closing Freebox session.');
+            freebox.logout();
+            process.exit(0);
+        });
+
+        process.on('SIGINT', () => {
+            console.info('Closing Freebox session.');
+            freebox.logout();
+            process.exit(0);
+        });
     }
 
     main().catch(err => console.error(err));
@@ -108,7 +119,7 @@ function initFolders(){
         if(!fs.existsSync(folder.watchedDir)){
             fs.mkdir(path.join(__dirname, folder.watchedDir), {recursive: true}, function(err){
                 if (err) throw err;
-                console.log("Watched directory '"+folder.watchedDir+"' did not exist, created it for you.")
+                console.log(`Watched directory "${folder.watchedDir}" did not exist, created it for you.`)
             })
         }else {
             fs.readdir(folder.watchedDir, (err, files) => {
