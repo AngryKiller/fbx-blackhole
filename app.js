@@ -126,7 +126,7 @@ function initFolders(){
                 if (err) throw err;
                 for (const file of files) {
                     fs.unlink(path.join(folder.watchedDir, file), err => {
-                        if (err) throw err;
+                        if (err) console.error(err);
                     });
                 }
             });
